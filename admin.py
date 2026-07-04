@@ -80,7 +80,17 @@ class Admin(User):
         manager.process_request_decision(leave_id, "Rejected", comment)
 
     def view_employee(self, employee):
+        # 1. Display general structural profile records
         employee.view_profile()
+        
+        # 2. Display the extended calculation breakdown details
+        from payroll_manager import DBPayrollManager
+        manager = DBPayrollManager()
+        pay = manager.get_employee_payroll_view(employee.user_id)
+        
+        print(f"Allowances:  ${pay['allowances']}")
+        print(f"Deductions:  ${pay['deductions']}")
+        print(f"Net Take-Home Pay: ${pay['net_salary']}")
 
     def edit_employee_details(self, employee, detail_to_be_updated, new_detail):
         editable_fields = ["name", "email", "phone", "address", "dept", "designation", "salary", "dp", "role"]
@@ -135,3 +145,31 @@ class Admin(User):
             total_payout += net_salary
             
         print(f"Total Operational Payroll Expense: ${total_payout}")
+
+    def modify_salary_structure(self, employee_id, new_base, new_allowances, new_deductions):
+        from payroll_manager import DBPayrollManager
+        manager = DBPayrollManager()
+        # Full control modification override
+        manager.update_structure(employee_id, new_base, new_allowances, new_deductions)
+
+    def view_all_leave_requests(self):
+        conn = sqlite3.connect("hrms.db")
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT l.leave_id, u.name, l.leave_type, l.start_date, l.end_date, l.status, l.admin_comment
+            FROM leave_requests l
+            JOIN users u ON l.user_id = u.user_id
+        """)
+        rows = cursor.fetchall()
+        conn.close()
+
+        print("\n--- Global Leave Requests Register ---")
+        if not rows:
+            print("No leave applications found.")
+            return
+
+        for row in rows:
+            leave_id, name, leave_type, start, end, status, comment = row
+            print(f"ID: {leave_id} | Staff: {name} | Type: {leave_type} | Duration: {start} to {end} | Status: [{status}]")
+            if comment:
+                print(f"   Admin Note: {comment}")
