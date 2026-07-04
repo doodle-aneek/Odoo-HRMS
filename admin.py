@@ -9,13 +9,11 @@ class Admin(User):
         conn = sqlite3.connect("hrms.db")
         cursor = conn.cursor()
         try:
-            # 1. Insert core user credentials into users table
             cursor.execute("""
                 INSERT INTO users (user_id, name, email, password, role) 
                 VALUES (?, ?, ?, ?, ?)
             """, (employee.user_id, employee.name, employee.email, employee.password, employee.role))
             
-            # 2. Insert profile details into employee_profiles table
             cursor.execute("""
                 INSERT INTO employee_profiles (user_id, phone, address, dept, designation, salary, dp)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -31,7 +29,6 @@ class Admin(User):
     def remove_employee(self, employee):
         conn = sqlite3.connect("hrms.db")
         cursor = conn.cursor()
-        # Due to ON DELETE CASCADE setup in schema, removing from 'users' wipes their profile too
         cursor.execute("DELETE FROM users WHERE user_id = ?", (employee.user_id,))
         conn.commit()
         if cursor.rowcount > 0:
@@ -58,7 +55,19 @@ class Admin(User):
             print(f"ID: {row[0]} | Name: {row[1]} | Dept: {row[2]} | Title: {row[3]}")
 
     def view_all_attendance(self):
-        pass
+        conn = sqlite3.connect("hrms.db")
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT u.name, a.date, a.check_in, a.check_out, a.status 
+            FROM attendance a
+            JOIN users u ON a.user_id = u.user_id
+        """)
+        rows = cursor.fetchall()
+        conn.close()
+
+        print("\n--- Company Global Attendance Logs ---")
+        for row in rows:
+            print(f"Staff: {row[0]} | Date: {row[1]} | Time: {row[2]}-{row[3]} | Status: {row[4]}")
 
     def accept_leave(self, employee):
         pass
@@ -67,7 +76,6 @@ class Admin(User):
         pass
 
     def view_employee(self, employee):
-        # Rely on the employee's existing query architecture to show details
         employee.view_profile()
 
     def edit_employee_details(self, employee, detail_to_be_updated, new_detail):
@@ -80,7 +88,6 @@ class Admin(User):
         conn = sqlite3.connect("hrms.db")
         cursor = conn.cursor()
 
-        # Route fields to their designated tables
         if detail_to_be_updated in ["name", "email", "role"]:
             cursor.execute(f"UPDATE users SET {detail_to_be_updated} = ? WHERE user_id = ?", (new_detail, employee.user_id))
         else:
@@ -89,7 +96,6 @@ class Admin(User):
         conn.commit()
         conn.close()
 
-        # Update the target object's local attribute dynamically
         setattr(employee, detail_to_be_updated, new_detail)
         print(f"Database successfully updated: {detail_to_be_updated} -> '{new_detail}'.")
 

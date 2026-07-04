@@ -17,7 +17,6 @@ def init_database():
     """)
 
     # 2. Create the Employee Profiles Table
-    # FOREIGN KEY connects the profile back to the core user account
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS employee_profiles (
         user_id INTEGER PRIMARY KEY,
@@ -31,10 +30,25 @@ def init_database():
     );
     """)
 
+    # 3. Create the Attendance Table (ADDED NEW)
+    # This matches the Present, Absent, Half-day requirements from the document[cite: 1]
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS attendance (
+        attendance_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        date TEXT NOT NULL,
+        check_in TEXT,
+        check_out TEXT,
+        status TEXT CHECK(status IN ('Present', 'Absent', 'Half-day', 'Leave')) NOT NULL,
+        UNIQUE(user_id, date),
+        FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE
+    );
+    """)
+
     # Commit the changes and close the link to the file
     connection.commit()
     connection.close()
-    print("Database tables created successfully inside 'hrms.db'!")
+    print("Database tables created/updated successfully inside 'hrms.db'!")
 
 if __name__ == "__main__":
     init_database()
