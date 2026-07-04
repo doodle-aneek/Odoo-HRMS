@@ -105,7 +105,9 @@ class Employee(User):
             print(f"{status}: {count} days")
 
     def apply_for_leave(self, leave_type, start_date, end_date):
-        print(f"Leave request for {leave_type} sent successfully.")
+        from leave_manager import DBLeaveManager
+        manager = DBLeaveManager()
+        manager.submit_request(self.user_id, leave_type, start_date, end_date)
 
     def view_salary(self):
         print(f"Salary: ${self.salary}")
