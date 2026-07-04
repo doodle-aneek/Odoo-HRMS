@@ -45,6 +45,21 @@ def init_database():
     );
     """)
 
+    # 4. Create the Leave Requests Table (ADDED NEW)
+    # Tracks the full approval workflow with statuses defined in the PDF
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS leave_requests (
+        leave_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        leave_type TEXT CHECK(leave_type IN ('Paid', 'Sick', 'Unpaid')) NOT NULL,
+        start_date TEXT NOT NULL,
+        end_date TEXT NOT NULL,
+        status TEXT CHECK(status IN ('Pending', 'Approved', 'Rejected')) DEFAULT 'Pending',
+        admin_comment TEXT,
+        FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE
+    );
+    """)
+
     # Commit the changes and close the link to the file
     connection.commit()
     connection.close()

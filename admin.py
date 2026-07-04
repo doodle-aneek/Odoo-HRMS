@@ -69,11 +69,15 @@ class Admin(User):
         for row in rows:
             print(f"Staff: {row[0]} | Date: {row[1]} | Time: {row[2]}-{row[3]} | Status: {row[4]}")
 
-    def accept_leave(self, employee):
-        pass
+    def accept_leave(self, leave_id, comment="Approved"):
+        from leave_manager import DBLeaveManager
+        manager = DBLeaveManager()
+        manager.process_request_decision(leave_id, "Approved", comment)
 
-    def reject_leave(self, employee):
-        pass
+    def reject_leave(self, leave_id, comment="Rejected"):
+        from leave_manager import DBLeaveManager
+        manager = DBLeaveManager()
+        manager.process_request_decision(leave_id, "Rejected", comment)
 
     def view_employee(self, employee):
         employee.view_profile()
