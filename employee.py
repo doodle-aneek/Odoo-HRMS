@@ -13,7 +13,6 @@ class Employee(User):
         self.documents = documents if documents else ""
 
     def view_profile(self):
-        # Dynamically fetch the fresh state from the database
         conn = sqlite3.connect("hrms.db")
         cursor = conn.cursor()
         cursor.execute("""
@@ -33,7 +32,7 @@ class Employee(User):
             print(f"Address: {row[3]}")
             print(f"Department: {row[4]}")
             print(f"Designation: {row[5]}")
-            print(f"Salary: {row[6]}") # Visible to the employee as read-only
+            print(f"Salary: ${row[6]}") # Read-only view for employee
         else:
             print("Profile record not found in database.")
 
@@ -65,22 +64,48 @@ class Employee(User):
         print("Profile picture updated in database successfully.")
 
     def check_in(self):
-        # Placeholder for dynamic attendance logging
-        print(f"Check in tracked for employee {self.name}.")
+        from datetime import datetime
+        from attendance_manager import DBAttendanceTracker
+        
+        today = datetime.now().strftime("%Y-%m-%d")
+        now_time = datetime.now().strftime("%H:%M")
+        
+        tracker = DBAttendanceTracker()
+        tracker.add_record(self.user_id, today, now_time, "")
+        print(f"Check in successful at {now_time}")
 
     def check_out(self):
-        # Placeholder for dynamic attendance logging
-        print(f"Check out tracked for employee {self.name}.")
+        from datetime import datetime
+        from attendance_manager import DBAttendanceTracker
+        
+        today = datetime.now().strftime("%Y-%m-%d")
+        now_time = datetime.now().strftime("%H:%M")
+        
+        # Pull check-in time to run correct calculations
+        conn = sqlite3.connect("hrms.db")
+        cursor = conn.cursor()
+        cursor.execute("SELECT check_in FROM attendance WHERE user_id = ? AND date = ?", (self.user_id, today))
+        row = cursor.fetchone()
+        conn.close()
+        
+        check_in_time = row[0] if row else "09:00"
+        
+        tracker = DBAttendanceTracker()
+        tracker.add_record(self.user_id, today, check_in_time, now_time)
+        print(f"Checkout successful at {now_time}")
 
     def view_daily_attendance(self):
         pass
 
     def view_weekly_attendance(self):
-        pass
+        from attendance_manager import format_weekly_summary_db
+        summary = format_weekly_summary_db(self.user_id)
+        print(f"\n--- Attendance Summary for {self.name} ---")
+        for status, count in summary.items():
+            print(f"{status}: {count} days")
 
     def apply_for_leave(self, leave_type, start_date, end_date):
-        # For a full implementation, you would insert rows into a separate 'leave_requests' table
         print(f"Leave request for {leave_type} sent successfully.")
 
     def view_salary(self):
-        print(f"Salary: {self.salary}")
+        print(f"Salary: ${self.salary}")
