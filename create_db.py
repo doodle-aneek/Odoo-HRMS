@@ -60,6 +60,18 @@ def init_database():
     );
     """)
 
+    # 5. Create the Payroll Table (ADDED NEW)
+    # Holds detailed salary structures accessible globally by Admin
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS payroll (
+        user_id INTEGER PRIMARY KEY,
+        base_salary REAL DEFAULT 0.0,
+        allowances REAL DEFAULT 0.0,
+        deductions REAL DEFAULT 0.0,
+        FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE
+    );
+    """)
+    
     # Commit the changes and close the link to the file
     connection.commit()
     connection.close()

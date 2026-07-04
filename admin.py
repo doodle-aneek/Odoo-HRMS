@@ -104,12 +104,17 @@ class Admin(User):
         print(f"Database successfully updated: {detail_to_be_updated} -> '{new_detail}'.")
 
     def view_payroll(self):
+        import sqlite3
+        from payroll_manager import calculate_net_salary
+        
         conn = sqlite3.connect("hrms.db")
         cursor = conn.cursor()
+        # Querying the comprehensive payroll table alongside user accounts
         cursor.execute("""
-            SELECT u.name, e.designation, e.salary 
+            SELECT u.name, e.designation, p.base_salary, p.allowances, p.deductions 
             FROM users u
             JOIN employee_profiles e ON u.user_id = e.user_id
+            LEFT JOIN payroll p ON u.user_id = p.user_id
         """)
         rows = cursor.fetchall()
         conn.close()
@@ -117,6 +122,16 @@ class Admin(User):
         print("\n--- Company Payroll Sheet (Database) ---")
         total_payout = 0
         for row in rows:
-            print(f"Employee: {row[0]} | Position: {row[1]} | Salary: ${row[2]}")
-            total_payout += row[2]
+            name, designation, base, allow, deduct = row
+            # Provide fallbacks if payroll records aren't set up yet
+            base = base if base else 0.0
+            allow = allow if allow else 0.0
+            deduct = deduct if deduct else 0.0
+            
+            # Use our calculation logic
+            net_salary = calculate_net_salary(base, allow, deduct)
+            
+            print(f"Employee: {name} | Position: {designation} | Net Pay: ${net_salary}")
+            total_payout += net_salary
+            
         print(f"Total Operational Payroll Expense: ${total_payout}")
