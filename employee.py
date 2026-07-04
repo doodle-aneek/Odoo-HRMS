@@ -95,7 +95,28 @@ class Employee(User):
         print(f"Checkout successful at {now_time}")
 
     def view_daily_attendance(self):
-        pass
+        from datetime import datetime
+        today = datetime.now().strftime("%Y-%m-%d")
+        
+        conn = sqlite3.connect("hrms.db")
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT check_in, check_out, status 
+            FROM attendance 
+            WHERE user_id = ? AND date = ?
+        """, (self.user_id, today))
+        row = cursor.fetchone()
+        conn.close()
+
+        print(f"\n--- Today's Attendance ({today}) ---")
+        if row:
+            check_in, check_out, status = row
+            check_out = check_out if check_out else "Not checked out yet"
+            print(f"Status: {status}")
+            print(f"Check-In: {check_in}")
+            print(f"Check-Out: {check_out}")
+        else:
+            print("Status: Absent (No check-in record found for today).")
 
     def view_weekly_attendance(self):
         from attendance_manager import format_weekly_summary_db
@@ -110,4 +131,14 @@ class Employee(User):
         manager.submit_request(self.user_id, leave_type, start_date, end_date)
 
     def view_salary(self):
-        print(f"Salary: ${self.salary}")
+        # Read-only calculation view from payroll table
+        from payroll_manager import DBPayrollManager
+        manager = DBPayrollManager()
+        pay = manager.get_employee_payroll_view(self.user_id)
+        
+        print(f"\n--- [READ-ONLY] YOUR SALARY BREAKDOWN ---")
+        print(f"Base Salary: ${pay['base']}")
+        print(f"Allowances:  ${pay['allowances']}")
+        print(f"Deductions:  ${pay['deductions']}")
+        print(f"---------------------------------------")
+        print(f"Net Take-Home Pay: ${pay['net_salary']}")
